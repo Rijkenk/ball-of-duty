@@ -28,7 +28,7 @@ jobs:
           if [ -f data/cuescore.json ] && diff -q <(jq 'del(.updated)' data/cuescore.json) <(jq 'del(.updated)' /tmp/new.json) >/dev/null; then
             echo "Geen wijzigingen"; exit 0
           fi
-          cp /tmp/new.json data/cuescore.json
+          mkdir -p data && cp /tmp/new.json data/cuescore.json
           git config user.name "cuescore-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/cuescore.json
