@@ -1,5 +1,5 @@
 // Bewaart de app zodat hij snel opent en ook zonder internet het schema laat zien.
-const CACHE = "bod-v6";
+const CACHE = "bod-v7";
 const SHELL = ["./", "index.html", "config.js?v=3", "manifest.webmanifest", "logo.jpg",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"];
