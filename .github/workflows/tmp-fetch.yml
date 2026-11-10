@@ -1,0 +1,18 @@
+name: tmp fetch
+on: { push: { paths: [".github/workflows/tmp-fetch.yml"] }, workflow_dispatch: {} }
+permissions: { contents: write }
+jobs:
+  f:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          mkdir -p tmpfetch
+          curl -sSfL "https://img.cuescore.com/image/f/3/feb0ec61a3e07a4eb4741ff3be351fc1.png?t=1664364545" -o tmpfetch/witchcraft-logo.png
+          curl -sSfL "https://img.cuescore.com/image/f/4/feb0ec61a3e07a4eb4741ff3be351fc1.png?t=1664364545" -o tmpfetch/witchcraft-logo-big.png || true
+          curl -sSf "https://api.cuescore.com/tournament/?id=83574430" -o tmpfetch/t83574430.json
+          curl -sS "https://api.cuescore.com/team/?id=1176555" -o tmpfetch/team1176555.json || true
+          curl -sS "https://api.cuescore.com/team/?id=62677429" -o tmpfetch/team62677429.json || true
+          ls -la tmpfetch
+          git config user.name "cuescore-bot"; git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tmpfetch && git commit -m "tmp fetch" && git push
