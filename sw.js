@@ -1,6 +1,6 @@
 // Bewaart de app zodat hij snel opent en ook zonder internet het schema laat zien.
-const CACHE = "bod-v2";
-const SHELL = ["./", "index.html", "config.js", "manifest.webmanifest", "logo.jpg",
+const CACHE = "bod-v3";
+const SHELL = ["./", "index.html", "config.js?v=3", "manifest.webmanifest", "logo.jpg",
   "icons/icon-192.png", "icons/icon-512.png", "icons/apple-touch-icon.png",
   "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"];
 self.addEventListener("install", e => {
@@ -17,7 +17,7 @@ self.addEventListener("fetch", e => {
   const sameOrigin = url.origin === location.origin;
   if (sameOrigin) {
     // Netwerk eerst, zodat updates direct doorkomen; cache als je offline bent
-    e.respondWith(fetch(req).then(res => {
+    e.respondWith(fetch(req, { cache: "no-cache" }).then(res => {
       const copy = res.clone(); caches.open(CACHE).then(c => c.put(req, copy)); return res;
     }).catch(() => caches.match(req).then(r => r || caches.match("index.html"))));
   } else {

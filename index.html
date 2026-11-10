@@ -260,7 +260,7 @@ footer a{color:inherit}
 
   <footer id="foot">Schema, uitslagen en stand komen van <a href="https://cuescore.com/team/Ball+of+Duty/62677429" target="_blank" rel="noopener">CueScore</a>.</footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="config.js"></script>
+<script src="config.js?v=3"></script>
 </div>
 
 <script>
@@ -597,7 +597,7 @@ window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferredPro
 $("installbtn").addEventListener("click",async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice.catch(()=>{});deferredPrompt=null;$("installbtn").hidden=true});
 window.addEventListener("appinstalled",()=>{$("install").hidden=true;$("installbar").hidden=true});
 $("installbar").addEventListener("click",ev=>{ev.preventDefault();showTab("wedstrijd");$("install").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"})});
-if("serviceWorker" in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+if("serviceWorker" in navigator&&location.protocol!=="file:")navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).catch(()=>{});
 
 // Database
 (async()=>{
