@@ -156,7 +156,7 @@ footer a{color:inherit}
     <div class="hero"><img src="logo.jpg" alt="Logo Ball of Duty"></div>
     <h1 class="sr">Ball of Duty</h1>
     <div class="subrow">
-      <small class="sub" id="sub">Tweede Klasse Overijssel · 10e, 18 punten na 6 duels</small>
+      <small class="sub" id="sub">Tweede Klasse Overijssel · 10e, 19 punten na 7 duels</small>
       <label class="who" for="me">Ik ben
         <select id="me"><option value="">kies je naam</option></select>
       </label>
@@ -261,14 +261,32 @@ const CS="https://cuescore.com/tournament/Pool+Overijssel+Tweede+Klasse+2026%252
 const solo=prefs=>prefs.filter(k=>k!=="k9b").length;
 // [wedstrijdnr, ronde, datum, thuis, uit, locatie] — alle wedstrijden om 20:00
 const RAW=[
- [7,1,"2026-09-14","The Pooligans",US,SE],[8,2,"2026-09-23","De 6 Muskebiers",US,SJ],[21,3,"2026-09-28",US,"Het Fundament Der Synagoge",SP],
- [23,4,"2026-10-05","Pocket Hunters",US,SE],[34,5,"2026-10-19",US,"Sjoel Shooters",SP],[38,6,"2026-10-27","Cueflitz",US,SE],
- [47,7,"2026-11-09",US,"'T stek ons niks",SP],[53,8,"2026-11-16","De Ballen verstand",US,SE],[60,9,"2026-11-30",US,"De Sjoeligans",SP],
- [68,10,"2026-12-07","De gedraaide ballen",US,SP],[73,11,"2026-12-14",US,"Sjoel98",SP],[83,12,"2027-01-05","BallBreakers",US,SJ],
- [86,13,"2027-01-11",US,"The Cue Crusaders",SP],[98,14,"2027-01-18",US,"The Pooligans",SP],[99,15,"2027-02-01",US,"De 6 Muskebiers",SP],
- [112,16,"2027-02-08","Het Fundament Der Synagoge",US,SJ],[114,17,"2027-02-15",US,"Pocket Hunters",SP],[125,18,"2027-03-02","Sjoel Shooters",US,SJ],
- [129,19,"2027-03-08",US,"Cueflitz",SP],[138,20,"2027-03-23","'T stek ons niks",US,SP],[144,21,"2027-04-05",US,"De Ballen verstand",SP],
- [151,22,"2027-04-12","De Sjoeligans",US,SJ],[159,23,"2027-04-19",US,"De gedraaide ballen",SP],[164,24,"2027-05-11","Sjoel98",US,SJ]];
+ [7,1,"2026-09-14","The Pooligans",US,SE],
+ [8,2,"2026-09-23","De 6 Muskebiers",US,SJ],
+ [21,3,"2026-09-28",US,"Het Fundament Der Synagoge",SP],
+ [23,4,"2026-10-05","Pocket Hunters",US,SE],
+ [34,5,"2026-10-19",US,"Sjoel Shooters",SP],
+ [38,6,"2026-10-27","Cueflitz",US,SE],
+ [47,7,"2026-11-09",US,"'T stek ons niks",SP],
+ [53,8,"2026-11-16","De Ballen verstand",US,SE],
+ [60,9,"2026-11-30",US,"De Sjoeligans",SP],
+ [68,10,"2026-12-07","De gedraaide ballen",US,SP],
+ [73,11,"2026-12-14",US,"Sjoel98",SP],
+ [83,12,"2027-01-05","BallBreakers",US,SJ],
+ [86,13,"2027-01-11",US,"The Cue Crusaders",SP],
+ [98,14,"2027-01-18",US,"The Pooligans",SP],
+ [99,15,"2027-02-01",US,"De 6 Muskebiers",SP],
+ [112,16,"2027-02-08","Het Fundament Der Synagoge",US,SJ],
+ [114,17,"2027-02-15",US,"Pocket Hunters",SP],
+ [125,18,"2027-03-02","Sjoel Shooters",US,SJ],
+ [129,19,"2027-03-08",US,"Cueflitz",SP],
+ [138,20,"2027-03-23","'T stek ons niks",US,SP],
+ [144,21,"2027-04-05",US,"De Ballen verstand",SP],
+ [151,22,"2027-04-12","De Sjoeligans",US,SJ],
+ [159,23,"2027-04-19",US,"De gedraaide ballen",SP],
+ [164,24,"2027-05-11","Sjoel98",US,SJ],
+ [174,25,"2027-05-24",US,"BallBreakers",SP],
+ [177,26,"2027-06-01","The Cue Crusaders",US,SP]];
 let MATCHES=RAW.map(([no,round,d,home,away,venue])=>{const[y,m,dd]=d.split("-").map(Number);return{no,round,date:new Date(y,m-1,dd,20,0),home,away,venue,thuis:home===US,opp:home===US?away:home}});
 
 const $=id=>document.getElementById(id);
@@ -293,11 +311,20 @@ let db=null, dbReady=false;
 let teamCode=store.get("bod-code")||"";
 let results={}; // matchNo -> {ons,tegen}
 let STAND=[
- [1,"Sjoel Shooters",7,6,0,1,30,12,36],[2,"De Ballen verstand",7,5,1,1,29,13,34],[3,"Cueflitz",7,5,2,0,27,15,32],
- [4,"BallBreakers",6,4,0,2,21,15,25],[5,"The Cue Crusaders",6,2,3,1,21,15,23],[6,"De gedraaide ballen",6,2,2,2,20,16,22],
- [6,"Het Fundament Der Synagoge",7,2,1,4,20,22,22],[8,"The Pooligans",7,2,1,4,18,24,20],[9,"'T stek ons niks",6,2,2,2,17,19,19],
- [10,"Ball of Duty",6,2,1,3,16,20,18],[11,"Sjoel98",6,1,2,3,16,20,17],[12,"Pocket Hunters",7,2,1,4,14,28,16],
- [12,"De Sjoeligans",6,2,0,4,14,22,16],[14,"De 6 Muskebiers",6,0,0,6,7,29,7]];
+ [1, "Sjoel Shooters", 7, 6, 0, 1, 30, 12, 36],
+ [2, "De Ballen verstand", 7, 5, 1, 1, 29, 13, 34],
+ [3, "Cueflitz", 7, 5, 2, 0, 27, 15, 32],
+ [4, "'T stek ons niks", 7, 3, 2, 2, 22, 20, 25],
+ [5, "BallBreakers", 6, 4, 0, 2, 21, 15, 25],
+ [6, "The Cue Crusaders", 6, 2, 3, 1, 21, 15, 23],
+ [7, "De gedraaide ballen", 6, 2, 2, 2, 20, 16, 22],
+ [7, "Het Fundament Der Synagoge", 7, 2, 1, 4, 20, 22, 22],
+ [9, "The Pooligans", 7, 2, 1, 4, 18, 24, 20],
+ [10, "Ball of Duty", 7, 2, 1, 4, 17, 25, 19],
+ [11, "Sjoel98", 6, 1, 2, 3, 16, 20, 17],
+ [12, "Pocket Hunters", 7, 2, 1, 4, 14, 28, 16],
+ [12, "De Sjoeligans", 6, 2, 0, 4, 14, 22, 16],
+ [14, "De 6 Muskebiers", 6, 0, 0, 6, 7, 29, 7]];
 const PARTIJEN=6;
 
 function key(no,p){return no+"_"+p}
