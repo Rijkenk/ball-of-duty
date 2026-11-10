@@ -144,6 +144,9 @@ select{background:var(--surface);border:1px solid var(--line);border-radius:8px;
 .score span{color:var(--muted)}
 .wtl{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;margin-left:4px}
 .wtl.w{background:var(--yes-soft);color:var(--yes)}.wtl.t{background:var(--maybe-soft);color:var(--maybe)}.wtl.l{background:var(--no-soft);color:var(--no)}
+.loginrow{display:flex;gap:6px;align-items:center}.loginrow input{width:110px;padding:7px 9px;border:1px solid var(--fire);border-radius:8px;background:var(--bg);color:var(--fg);font:600 14px var(--body);letter-spacing:.06em}.loginrow .btn{padding:8px 12px}
+.loggedin{font-size:13px;color:var(--yes);font-weight:600}.loggedin button{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:12px;padding:0 0 0 6px}
+.codemsg{flex-basis:100%;margin:0}.codemsg:empty{display:none}
 .btn{border:0;background:var(--fire);color:#160a00;font-weight:700;border-radius:10px;padding:11px 16px;cursor:pointer}
 .coderow{display:flex;gap:8px}.coderow input{flex:1;min-width:0;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);font:inherit}
 .howto{display:grid;gap:14px}.howto h3{font-size:16px;margin-bottom:4px}.howto ol{margin:0;padding-left:20px;color:var(--muted);font-size:14px;display:grid;gap:3px}.howto b{color:var(--fg)}
@@ -171,6 +174,12 @@ footer a{color:inherit}
       <label class="who" for="me">Ik ben
         <select id="me"><option value="">kies je naam</option></select>
       </label>
+      <form class="loginrow" id="codecard" hidden>
+        <input id="codein" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="jouw code" aria-label="Persoonlijke code">
+        <button type="submit" class="btn">Inloggen</button>
+      </form>
+      <span class="loggedin" id="loggedin" hidden>Ingelogd <button type="button" id="logout">uitloggen</button></span>
+      <p class="hint codemsg" id="codemsg"></p>
     </div>
   </header>
 
@@ -190,11 +199,6 @@ footer a{color:inherit}
 
   <div class="notice" id="dbnote" hidden></div>
 
-  <form class="card" id="codecard" hidden>
-    <div><h2 id="codetitle">Jouw code</h2><p class="hint">Vul één keer je persoonlijke code in. Daarna kun je je opgeven. De code krijg je van Kenneth.</p></div>
-    <div class="coderow"><input id="codein" type="text" autocomplete="off" autocapitalize="characters" placeholder="bijv. A1B2C3" aria-label="Persoonlijke code"><button type="submit" class="btn">Inloggen</button></div>
-    <p class="hint" id="codemsg"></p>
-  </form>
 
   <section class="card" id="mycard">
     <div>
@@ -380,9 +384,9 @@ function renderMine(){
   const m=selected, e=me?entry(m.no,me):null;
   const st=e?.status||"", prefs=e?.prefs||[];
   const enabled=!!me&&!!db&&!!teamCode;
-  $("codecard").hidden=!(me&&db&&!teamCode);$("codetitle").textContent=me?`Code van ${first(PLAYERS.find(p=>p.id===me)?.name||"")}`:"Jouw code";
+  $("codecard").hidden=!(me&&db&&!teamCode);$("loggedin").hidden=!(me&&teamCode);
   $("mytitle").textContent=me?`Jouw opgave, ${first(PLAYERS.find(p=>p.id===me)?.name||"")}`:"Jouw opgave";
-  $("myhint").textContent=!me?"Kies eerst bovenaan je naam.":!db?(dbReady?"Opslaan lukt nu niet. Controleer je verbinding.":"Even geduld, opgaves laden…"):!teamCode?"Vul hieronder eerst je persoonlijke code in.":`Voor ${fmtDay.format(m.date)} tegen ${m.opp}. Je kunt dit altijd aanpassen.`;
+  $("myhint").textContent=!me?"Kies eerst bovenaan je naam.":!db?(dbReady?"Opslaan lukt nu niet. Controleer je verbinding.":"Even geduld, opgaves laden…"):!teamCode?"Vul bovenaan eerst je persoonlijke code in.":`Voor ${fmtDay.format(m.date)} tegen ${m.opp}. Je kunt dit altijd aanpassen.`;
   for(const v of["ja","misschien","nee"]){$("st-"+v).setAttribute("aria-pressed",String(st===v))}
   $("seg").classList.toggle("disabled",!enabled);
   const prefOn=enabled&&st!=="nee";
@@ -547,6 +551,7 @@ loadCs();
 document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadCs()});
 
 // Teamcode
+$("logout").addEventListener("click",()=>forgetCode());
 function forgetCode(){auth=null;store.set("bod-auth","");syncAuth();renderAll()}
 $("codecard").addEventListener("submit",async ev=>{ev.preventDefault();const c=$("codein").value.trim().toUpperCase();if(!c||!me||!SB)return;
   $("codemsg").textContent="Controleren…";
