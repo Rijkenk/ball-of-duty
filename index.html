@@ -219,7 +219,7 @@ footer a{color:inherit}
   </section>
 
   <section class="card">
-    <div><h2>Wedstrijdformulier</h2><p class="hint">Kies per partij wie er speelt. ★ = wil dit graag of heeft geen voorkeur. Iedereen speelt maximaal 2 enkelpartijen; koppel telt niet mee. De captain en Kenneth maken de opstelling.</p></div>
+    <div><h2>Wedstrijdformulier</h2><p class="hint">Kies per partij wie er speelt. ★ = wil dit graag spelen. Iedereen speelt maximaal 2 enkelpartijen; koppel telt niet mee. De captain en Kenneth maken de opstelling.</p></div>
     <div class="need"><ul id="need"></ul></div>
     <p class="hint" id="lineupwho"></p>
     <form class="coderow" id="admincard" hidden><input id="adminin" type="password" autocomplete="off" placeholder="beheercode" aria-label="Beheercode"><button type="submit" class="btn">Ontgrendel</button></form>
@@ -412,7 +412,7 @@ function renderLineup(){
   const canEdit=lineupWritable();
   const ae=document.activeElement, focusId=ae&&ae.id;
   $("need").innerHTML=GAMES.map(g=>{
-    const want=avail.filter(({e})=>(e.prefs||[]).includes(g.k)||(e.prefs||[]).includes("any"));
+    const want=avail.filter(({e})=>(e.prefs||[]).includes(g.k));
     const names=want.map(({p,e})=>first(p.name)+(e.status==="misschien"?" (?)":"")).join(", ")||"nog niemand";
     const sels=SLOTS.filter(([,gk])=>gk===g.k).map(([k])=>{
       const cur=sl[k]||"";
