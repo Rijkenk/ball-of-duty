@@ -78,6 +78,12 @@ select{background:var(--surface);border:1px solid var(--line);border-radius:8px;
 .need{display:flex;flex-direction:column;gap:8px}
 .need li{list-style:none;display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center}
 .need ul{margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.need li{grid-template-columns:26px 1fr}
+.slots{grid-column:2;display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:6px}
+.slots select{width:100%}
+.warn{margin:0;background:var(--no-soft);color:var(--no);border-radius:10px;padding:9px 12px;font-size:13px;font-weight:600}
+.chip.pref{opacity:.45}
+.game.any .gb{background:var(--line);color:var(--fg)}
 .need .nm{min-width:0;font-size:13px;color:var(--muted)}
 .need .nm b{color:var(--fg);font-weight:600;font-size:14px;display:block}
 .need .st{font-size:12px;font-weight:600;white-space:nowrap}
@@ -191,7 +197,7 @@ footer a{color:inherit}
       <button type="button" id="st-nee" data-v="nee" aria-pressed="false">Ik kan niet</button>
     </div>
     <div>
-      <p class="hint" style="margin-bottom:8px">Wat wil je spelen? Kies maximaal 2 enkelpartijen. Koppel 9-ball kun je daar los bij kiezen.</p>
+      <p class="hint" style="margin-bottom:8px">Wat wil je spelen? Kies zoveel als je wilt, of geen voorkeur. In het wedstrijdformulier wordt daarna de opstelling gemaakt.</p>
       <div class="games" id="games" role="group" aria-label="Speelvoorkeur"></div>
     </div>
     <div class="saved" id="saved"></div>
@@ -204,8 +210,10 @@ footer a{color:inherit}
   </section>
 
   <section class="card">
-    <div><h2>Wedstrijdformulier</h2><p class="hint">Wie wil wat spelen, van de spelers die erbij zijn of misschien komen.</p></div>
+    <div><h2>Wedstrijdformulier</h2><p class="hint">Kies per partij wie er speelt. ★ = wil dit graag of heeft geen voorkeur. Iedereen speelt maximaal 2 enkelpartijen; koppel telt niet mee.</p></div>
     <div class="need"><ul id="need"></ul></div>
+    <p class="warn" id="lineupwarn" hidden></p>
+    <div class="saved" id="lineupsaved"></div>
   </section>
 
   <section class="card">
@@ -255,8 +263,10 @@ const GAMES=[
  {k:"10b",n:"10-ball",lab:"10",spots:1,sub:"1 partij",c:"var(--g10)"},
  {k:"141",n:"Straight pool",lab:"14.1",spots:1,sub:"1 partij",c:"var(--g141)"},
  {k:"9b",n:"9-ball",lab:"9",spots:1,sub:"1 partij",c:"var(--g9)"},
- {k:"k9b",n:"Koppel 9-ball",lab:"K9",spots:2,sub:"telt niet mee voor de 2",c:"var(--gk9)"}];
+ {k:"k9b",n:"Koppel 9-ball",lab:"K9",spots:2,sub:"koppel, 2 spelers",c:"var(--gk9)"}];
 const MAXP=2;
+const SLOTS=[["8b-1","8b"],["8b-2","8b"],["10b","10b"],["141","141"],["9b","9b"],["k9b-1","k9b"],["k9b-2","k9b"]];
+let lineups={}; // matchNo -> {slots:{slotKey:playerId}}
 const CS="https://cuescore.com/tournament/Pool+Overijssel+Tweede+Klasse+2026%252F2027/83574433";
 const solo=prefs=>prefs.filter(k=>k!=="k9b").length;
 // [wedstrijdnr, ronde, datum, thuis, uit, locatie] — alle wedstrijden om 20:00
@@ -359,8 +369,9 @@ function renderMine(){
   $("seg").classList.toggle("disabled",!enabled);
   const prefOn=enabled&&st!=="nee";
   $("games").classList.toggle("disabled",!prefOn);
-  $("games").innerHTML=GAMES.map(g=>{const on=prefs.includes(g.k);const dis=!on&&g.k!=="k9b"&&solo(prefs)>=MAXP;
-    return `<button type="button" class="game" id="g-${g.k}" data-k="${g.k}" aria-pressed="${on}" ${dis?"disabled":""}><span class="gb" style="--c:${g.c}">${g.lab}</span><span><b>${g.n}</b><small>${g.sub}</small></span></button>`}).join("");
+  $("games").innerHTML=GAMES.map(g=>{const on=prefs.includes(g.k);
+    return `<button type="button" class="game" id="g-${g.k}" data-k="${g.k}" aria-pressed="${on}"><span class="gb" style="--c:${g.c}">${g.lab}</span><span><b>${g.n}</b><small>${g.sub}</small></span></button>`}).join("")+
+    `<button type="button" class="game any" id="g-any" data-k="any" aria-pressed="${prefs.includes("any")}"><span class="gb">?</span><span><b>Geen voorkeur</b><small>alles is goed</small></span></button>`;
 }
 
 function renderTeam(){
@@ -369,20 +380,44 @@ function renderTeam(){
   const rows=PLAYERS.map(p=>({p,e:entry(m.no,p.id)})).sort((a,b)=>(order[a.e?.status||""]-order[b.e?.status||""])||a.p.name.localeCompare(b.p.name));
   $("team").innerHTML=rows.map(({p,e})=>{
     const s=e?.status||"";if(s==="ja")ja++;if(s==="misschien")mis++;if(s==="nee")nee++;
-    const chips=s==="nee"?"":"<span class=\"chips\">"+(e?.prefs||[]).map(k=>GAMES.find(g=>g.k===k)).filter(Boolean).map(g=>`<span class="chip" style="--c:${g.c}" title="${g.n}">${g.lab}</span>`).join("")+"</span>";
+    const asg=assigned(m.no,p.id);
+    const chips=s==="nee"&&!asg.length?"":"<span class=\"chips\">"+(asg.length?asg.map(k=>GAMES.find(g=>g.k===k)).map(g=>`<span class="chip" style="--c:${g.c}" title="Speelt ${g.n}">${g.lab}</span>`).join(""):(e?.prefs||[]).includes("any")?'<span class="chip pref" style="--c:var(--line)" title="Geen voorkeur">?</span>':(e?.prefs||[]).map(k=>GAMES.find(g=>g.k===k)).filter(Boolean).map(g=>`<span class="chip pref" style="--c:${g.c}" title="Voorkeur ${g.n}">${g.lab}</span>`).join(""))+"</span>";
     const label={ja:"Erbij",misschien:"Misschien",nee:"Kan niet","":"Nog niet opgegeven"}[s];
     return `<li><span class="pname">${esc(p.name)}${p.cap?"<em>captain</em>":""}${p.id===me?"<em>jij</em>":""}</span><span class="right">${chips}<span class="pill ${s||"open"}">${label}</span></span></li>`;
   }).join("");
   $("sum").innerHTML=`<span><b>${ja}</b> erbij</span><span><b>${mis}</b> misschien</span><span><b>${nee}</b> kan niet</span><span><b>${PLAYERS.length-ja-mis-nee}</b> open</span>`;
-  $("need").innerHTML=GAMES.map(g=>{
-    const want=PLAYERS.filter(p=>{const e=entry(m.no,p.id);return e&&(e.status==="ja"||e.status==="misschien")&&(e.prefs||[]).includes(g.k)});
-    const names=want.map(p=>first(p.name)+(entry(m.no,p.id).status==="misschien"?" (?)":"")).join(", ")||"Nog niemand";
-    const short=g.spots-want.length;
-    return `<li><span class="gb" style="--c:${g.c}">${g.lab}</span><span class="nm"><b>${g.n}</b>${esc(names)}</span><span class="st ${short>0?"short":"ok"}">${short>0?`nog ${short} nodig`:"gedekt"}</span></li>`}).join("");
+  renderLineup();
   $("teamhint").textContent=`${cap(fmtDay.format(m.date))} tegen ${m.opp}`;
 }
 
 function scoreTxt(m){return Number.isFinite(m.sa)&&Number.isFinite(m.sb)&&m.status==="finished"?`${m.sa}–${m.sb}`:""}
+function lineupWritable(){return !!db&&!!teamCode}
+function assigned(no,pid){const sl=lineups[no]?.slots||{};return SLOTS.filter(([k])=>sl[k]===pid).map(([,g])=>g)}
+function renderLineup(){
+  const m=selected, sl=lineups[m.no]?.slots||{};
+  const avail=PLAYERS.map(p=>({p,e:entry(m.no,p.id)})).filter(({e})=>e&&(e.status==="ja"||e.status==="misschien"));
+  const canEdit=lineupWritable();
+  const ae=document.activeElement, focusId=ae&&ae.id;
+  $("need").innerHTML=GAMES.map(g=>{
+    const want=avail.filter(({e})=>(e.prefs||[]).includes(g.k)||(e.prefs||[]).includes("any"));
+    const names=want.map(({p,e})=>first(p.name)+(e.status==="misschien"?" (?)":"")).join(", ")||"nog niemand";
+    const sels=SLOTS.filter(([,gk])=>gk===g.k).map(([k])=>{
+      const cur=sl[k]||"";
+      const opts=[...avail].sort((a,b)=>(want.includes(b)-want.includes(a))||((a.e.status==="ja"?0:1)-(b.e.status==="ja"?0:1))||a.p.name.localeCompare(b.p.name));
+      const curMissing=cur&&!opts.some(o=>o.p.id===cur);
+      return `<select id="ls-${k}" data-slot="${k}" aria-label="${g.n} speler" ${canEdit?"":"disabled"}><option value="">— kies speler —</option>${curMissing?`<option value="${cur}" selected>${esc(PLAYERS.find(p=>p.id===cur)?.name||"?")} (afgemeld)</option>`:""}${opts.map(({p,e})=>`<option value="${p.id}" ${p.id===cur?"selected":""}>${want.some(w=>w.p.id===p.id)?"★ ":""}${esc(p.name)}${e.status==="misschien"?" (?)":""}</option>`).join("")}</select>`}).join("");
+    return `<li><span class="gb" style="--c:${g.c}">${g.lab}</span><span class="nm"><b>${g.n}</b>Willen: ${esc(names)}</span><div class="slots">${sels}</div></li>`}).join("");
+  if(focusId&&$(focusId))$(focusId).focus();
+  // controles
+  const warns=[];
+  for(const p of PLAYERS){const a=assigned(m.no,p.id);const solo=a.filter(k=>k!=="k9b").length;
+    if(solo>2)warns.push(`${first(p.name)} staat bij ${solo} enkelpartijen (max 2).`);
+    if(a.filter(k=>k==="k9b").length>1)warns.push(`${first(p.name)} staat twee keer bij koppel.`);
+    if(a.filter(k=>k==="8b").length>1)warns.push(`${first(p.name)} staat twee keer bij 8-ball.`);}
+  const filled=SLOTS.filter(([k])=>sl[k]).length;
+  $("lineupwarn").hidden=!warns.length;$("lineupwarn").textContent=warns.join(" ");
+  if(!$("lineupsaved").dataset.busy)$("lineupsaved").textContent=`${filled} van ${SLOTS.length} plekken ingevuld.`;
+}
 function fixRow(m){
   const e=me?entry(m.no,me):null;
   const mine=e?.status?`<span class="pill ${e.status} mine">${{ja:"Erbij",misschien:"Misschien",nee:"Kan niet"}[e.status]}</span>`:"";
@@ -437,8 +472,18 @@ document.querySelectorAll("#seg button").forEach(b=>b.addEventListener("click",(
   const e=entry(selected.no,me);const v=b.dataset.v;save({status:e?.status===v?"":v})}));
 $("games").addEventListener("click",ev=>{const b=ev.target.closest("button[data-k]");if(!b||b.disabled)return;
   const e=entry(selected.no,me)||{};let prefs=[...(e.prefs||[])];const k=b.dataset.k;
-  if(prefs.includes(k))prefs=prefs.filter(x=>x!==k);else if(k==="k9b"||solo(prefs)<MAXP)prefs.push(k);else return;
+  if(prefs.includes(k))prefs=prefs.filter(x=>x!==k);else if(k==="any")prefs=["any"];else prefs=[...prefs.filter(x=>x!=="any"),k];
   const patch={prefs};if(!e.status)patch.status="ja";save(patch)});
+
+$("need").addEventListener("change",ev=>{
+  const sel=ev.target.closest("select[data-slot]");if(!sel||!lineupWritable())return;
+  const no=selected.no;const slots={...(lineups[no]?.slots||{})};
+  if(sel.value)slots[sel.dataset.slot]=sel.value;else delete slots[sel.dataset.slot];
+  lineups[no]={slots};renderTeam();
+  const el=$("lineupsaved");el.dataset.busy="1";el.textContent="Opstelling opslaan…";
+  db.collection("opstelling").doc(String(no)).set({match:no,slots,updatedAt:new Date().toISOString()})
+    .then(()=>{delete el.dataset.busy;el.textContent="Opstelling opgeslagen"},err=>{delete el.dataset.busy;el.textContent="Opstelling niet opgeslagen: "+(err?.code==="bad_code"?"de teamcode klopt niet.":"probeer het opnieuw.");if(err?.code==="bad_code"&&typeof forgetCode==="function")forgetCode()});
+});
 
 function showTab(name){
   for(const t of["wedstrijd","stand"]){$("tab-"+t).hidden=t!==name;$("tab-btn-"+t).setAttribute("aria-selected",String(t===name))}
@@ -496,10 +541,12 @@ function makeDb(){
   const fail=error=>{const e=new Error(error.message||"fout");e.code=/bad_code/.test(error.message||"")?"bad_code":"error";throw e};
   async function write(name,id,d){
     if(name==="opgaves"){const {error}=await SB.rpc("set_opgave",{p_code:teamCode,p_match:d.match,p_player:d.player,p_status:d.status||"",p_prefs:d.prefs||[]});if(error)fail(error)}
+    else if(name==="opstelling"){const {error}=await SB.rpc("set_opstelling",{p_code:teamCode,p_match:d.match,p_slots:d.slots||{}});if(error)fail(error)}
     else{const {error}=await SB.rpc("set_uitslag",{p_code:teamCode,p_match:+id,p_ons:d?d.ons:null,p_tegen:d?d.tegen:null});if(error)fail(error)}
   }
   function toDoc(name,r){
     if(name==="opgaves")return{id:r.match+"_"+r.player,data:()=>({match:r.match,player:r.player,status:r.status||"",prefs:r.prefs||[],updatedAt:r.updated_at})};
+    if(name==="opstelling")return{id:String(r.match),data:()=>({match:r.match,slots:r.slots||{}})};
     return{id:String(r.match),data:()=>({match:r.match,ons:r.ons,tegen:r.tegen,updatedAt:r.updated_at})};
   }
   return{collection(name){return{
@@ -532,6 +579,7 @@ if("serviceWorker" in navigator&&location.protocol!=="file:")navigator.serviceWo
   let d=null;try{d=makeDb()}catch(e){d=null}
   if(!d){clearTimeout(timer);dbReady=true;$("dbnote").hidden=false;$("dbnote").textContent="Je ziet het schema, maar de opgaves zijn nog niet gekoppeld. De database is nog niet ingesteld.";renderAll();return}
   db=d;
+  db.collection("opstelling").onSnapshot(snap=>{const r={};for(const doc of snap.docs){const v=doc.data();if(v)r[v.match]={slots:v.slots||{}}}lineups=r;renderTeam()},()=>{});
   db.collection("opgaves").onSnapshot(snap=>{
     clearTimeout(timer);dbReady=true;$("dbnote").hidden=true;
     const next={};for(const doc of snap.docs){const v=doc.data();if(v)next[doc.id]=v}

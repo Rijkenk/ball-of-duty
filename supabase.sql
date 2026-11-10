@@ -12,17 +12,26 @@ create table if not exists public.opgaves (
 );
 
 
+create table if not exists public.opstelling (
+  match int primary key,
+  slots jsonb not null default '{}',
+  updated_at timestamptz not null default now()
+);
+
 create table if not exists public.team_secret (
   id int primary key default 1 check (id = 1),
   code text not null
 );
 
 alter table public.opgaves enable row level security;
+alter table public.opstelling enable row level security;
 alter table public.team_secret enable row level security;
 
 -- Iedereen met de app mag lezen; schrijven gaat alleen via de functies hieronder.
 drop policy if exists "lezen" on public.opgaves;
 create policy "lezen" on public.opgaves for select using (true);
+drop policy if exists "lezen" on public.opstelling;
+create policy "lezen" on public.opstelling for select using (true);
 -- team_secret krijgt geen policy: niemand kan de code uitlezen.
 
 create or replace function public.check_code(p_code text) returns boolean
@@ -34,7 +43,6 @@ create or replace function public.set_opgave(p_code text, p_match int, p_player 
 returns void language plpgsql security definer set search_path = public as $$
 begin
   if not check_code(p_code) then raise exception 'bad_code'; end if;
-  if coalesce(array_length(array_remove(p_prefs, 'k9b'), 1), 0) > 2 then raise exception 'te veel voorkeuren'; end if;
   insert into opgaves (match, player, status, prefs, updated_at)
   values (p_match, p_player, coalesce(p_status, ''), coalesce(p_prefs, '{}'), now())
   on conflict (match, player) do update
@@ -42,12 +50,25 @@ begin
 end $$;
 
 
+create or replace function public.set_opstelling(p_code text, p_match int, p_slots jsonb)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  if not check_code(p_code) then raise exception 'bad_code'; end if;
+  insert into opstelling (match, slots, updated_at) values (p_match, coalesce(p_slots, '{}'), now())
+  on conflict (match) do update set slots = excluded.slots, updated_at = now();
+end $$;
+
 grant execute on function public.check_code(text) to anon;
+grant execute on function public.set_opstelling(text, int, jsonb) to anon;
 grant execute on function public.set_opgave(text, int, text, text, text[]) to anon;
 
 -- Live bijwerken in de app
 do $$ begin
   alter publication supabase_realtime add table public.opgaves;
+exception when duplicate_object then null; end $$;
+
+do $$ begin
+  alter publication supabase_realtime add table public.opstelling;
 exception when duplicate_object then null; end $$;
 
 -- KIES HIER JULLIE TEAMCODE
