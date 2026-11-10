@@ -2,7 +2,7 @@
 <html lang="nl">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#0b0b0c">
 <meta name="description" content="Volgende wedstrijd, aanwezigheid en speelvoorkeur voor Ball of Duty.">
 <link rel="manifest" href="manifest.webmanifest">
@@ -144,8 +144,10 @@ select{background:var(--surface);border:1px solid var(--line);border-radius:8px;
 .score span{color:var(--muted)}
 .wtl{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;margin-left:4px}
 .wtl.w{background:var(--yes-soft);color:var(--yes)}.wtl.t{background:var(--maybe-soft);color:var(--maybe)}.wtl.l{background:var(--no-soft);color:var(--no)}
+html{touch-action:manipulation;-webkit-text-size-adjust:100%}
+input,select,textarea{font-size:16px!important}
 .whobox{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;min-width:0}.whobox select{max-width:118px}.whobox .who{white-space:nowrap}
-.loginrow{display:flex;gap:6px;align-items:center}.loginrow input{width:70px;padding:7px 9px;border:1px solid var(--fire);border-radius:8px;background:var(--bg);color:var(--fg);font:600 14px var(--body);letter-spacing:.06em}.loginrow .btn{padding:8px 10px;white-space:nowrap}
+.loginrow{display:flex;gap:6px;align-items:center}.loginrow input{width:70px;padding:7px 9px;border:1px solid var(--fire);border-radius:8px;background:var(--bg);color:var(--fg);font:600 16px var(--body);letter-spacing:.04em}.loginrow .btn{padding:8px 10px;white-space:nowrap}
 .loggedin{font-size:13px;color:var(--yes);font-weight:600}.loggedin button{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:12px;padding:0 0 0 6px}
 .codemsg{flex-basis:100%;margin:0}.codemsg:empty{display:none}
 .btn{border:0;background:var(--fire);color:#160a00;font-weight:700;border-radius:10px;padding:11px 16px;cursor:pointer}
@@ -619,5 +621,6 @@ if("serviceWorker" in navigator&&location.protocol!=="file:")navigator.serviceWo
   },err=>{clearTimeout(timer);dbReady=true;$("dbnote").hidden=false;$("dbnote").textContent="Opgaves laden mislukt ("+(err?.code||"onbekend")+"). Probeer het later opnieuw.";renderAll()});
 })();
 </script>
+<script>["gesturestart","gesturechange"].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));document.addEventListener("touchmove",e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});</script>
 </body>
 </html>
