@@ -11,10 +11,12 @@ Installeerbare webapp voor de spelers van Ball of Duty: volgende wedstrijd, aanw
 
 ## Online zetten
 1. Maak een gratis project op supabase.com.
-2. Open daar **SQL Editor**, plak `supabase.sql`, verander onderaan `VERANDER-MIJ` in jullie teamcode en klik **Run**.
+2. Open daar **SQL Editor**, draai `supabase.sql` en daarna `supabase-spelerscodes.sql`. Die laatste maakt voor elke speler een eigen code en laat ze onderaan zien.
 3. Kopieer bij **Project Settings > API** de Project URL en de anon/public key naar `config.js`.
 4. Zet alle bestanden in een GitHub-repository en zet **Settings > Pages** aan (branch `main`, map `/`).
-5. Deel de link `https://<gebruikersnaam>.github.io/<repo>/` en de teamcode in de teamapp.
+5. Deel de link `https://rijkenk.github.io/ball-of-duty/` in de teamapp en geef iedereen persoonlijk zijn eigen code.
+
+Code van een speler wijzigen: `update spelers set code = 'NIEUW1' where naam = 'Vincent Bos';` in de SQL Editor.
 
 ## Installeren op je telefoon
 - **iPhone/iPad:** open de link in Safari > deelknop > *Zet op beginscherm* > *Voeg toe*.
