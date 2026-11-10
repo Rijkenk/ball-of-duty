@@ -38,6 +38,7 @@ jobs:
         env:
           CAPTAIN_PHONE: ${{ secrets.CAPTAIN_PHONE }}
           CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
         run: |
           git pull --quiet origin main || true
           node scripts/check-opkomst.mjs

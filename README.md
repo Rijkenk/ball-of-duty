@@ -26,10 +26,10 @@ De app probeert eerst rechtstreeks de CueScore-API (`api.cuescore.com/tournament
 In `index.html` staat het schema van 10 november als reserve voor als beide niet lukken.
 
 ## Melding bij te weinig spelers
-Een wedstrijd gaat alleen door met minimaal 3 aanmeldingen. Elk uur controleert de GitHub Action of er een wedstrijd binnen 72 uur begint. Zijn er dan minder dan 3 spelers aangemeld ("Ik ben erbij"), dan krijgt de captain één WhatsApp-bericht via CallMeBot.
+Een wedstrijd gaat alleen door met minimaal 3 aanmeldingen. Elk uur controleert de GitHub Action of er een wedstrijd binnen 72 uur begint. Zijn er dan minder dan 3 spelers aangemeld ("Ik ben erbij"), dan krijgt de captain één melding.
 
-Instellen (één keer):
-1. De captain volgt de stappen op callmebot.com (WhatsApp API) en krijgt daarna een API-key per WhatsApp.
-2. In de repo: **Settings > Secrets and variables > Actions > New repository secret**:
-   - `CAPTAIN_PHONE`: telefoonnummer van de captain, internationaal (bijv. +316...)
-   - `CALLMEBOT_APIKEY`: de key van CallMeBot
+Pushmelding via ntfy (aanbevolen):
+1. De captain installeert de gratis app **ntfy** (App Store / Play Store) en abonneert zich op een zelfbedacht, moeilijk te raden kanaal, bijv. `bod-captain-x7k29q`.
+2. In de repo: **Settings > Secrets and variables > Actions > New repository secret**: `NTFY_TOPIC` = die kanaalnaam.
+
+Of WhatsApp via CallMeBot (als daar plek is): secrets `CAPTAIN_PHONE` (+316...) en `CALLMEBOT_APIKEY`.
