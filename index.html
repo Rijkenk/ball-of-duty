@@ -144,7 +144,8 @@ select{background:var(--surface);border:1px solid var(--line);border-radius:8px;
 .score span{color:var(--muted)}
 .wtl{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;margin-left:4px}
 .wtl.w{background:var(--yes-soft);color:var(--yes)}.wtl.t{background:var(--maybe-soft);color:var(--maybe)}.wtl.l{background:var(--no-soft);color:var(--no)}
-.loginrow{display:flex;gap:6px;align-items:center}.loginrow input{width:110px;padding:7px 9px;border:1px solid var(--fire);border-radius:8px;background:var(--bg);color:var(--fg);font:600 14px var(--body);letter-spacing:.06em}.loginrow .btn{padding:8px 12px}
+.whobox{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;min-width:0}.whobox select{max-width:118px}.whobox .who{white-space:nowrap}
+.loginrow{display:flex;gap:6px;align-items:center}.loginrow input{width:70px;padding:7px 9px;border:1px solid var(--fire);border-radius:8px;background:var(--bg);color:var(--fg);font:600 14px var(--body);letter-spacing:.06em}.loginrow .btn{padding:8px 10px;white-space:nowrap}
 .loggedin{font-size:13px;color:var(--yes);font-weight:600}.loggedin button{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:12px;padding:0 0 0 6px}
 .codemsg{flex-basis:100%;margin:0}.codemsg:empty{display:none}
 .btn{border:0;background:var(--fire);color:#160a00;font-weight:700;border-radius:10px;padding:11px 16px;cursor:pointer}
@@ -171,14 +172,16 @@ footer a{color:inherit}
     <h1 class="sr">Ball of Duty</h1>
     <div class="subrow">
       <small class="sub" id="sub">Tweede Klasse Overijssel · 10e, 19 punten na 7 duels</small>
+      <div class="whobox">
       <label class="who" for="me">Ik ben
         <select id="me"><option value="">kies je naam</option></select>
       </label>
       <form class="loginrow" id="codecard" hidden>
-        <input id="codein" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="jouw code" aria-label="Persoonlijke code">
+        <input id="codein" type="text" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="code" aria-label="Persoonlijke code">
         <button type="submit" class="btn">Inloggen</button>
       </form>
       <span class="loggedin" id="loggedin" hidden>Ingelogd <button type="button" id="logout">uitloggen</button></span>
+      </div>
       <p class="hint codemsg" id="codemsg"></p>
     </div>
   </header>
