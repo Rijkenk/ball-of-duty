@@ -64,6 +64,11 @@ begin
   on conflict (match) do update set slots = excluded.slots, updated_at = now();
 end $$;
 
+-- Expliciete rechten (werkt ook als 'Automatically expose new tables' uit staat)
+grant usage on schema public to anon;
+grant select on public.opgaves, public.opstelling to anon;
+revoke all on public.team_secret from anon, authenticated;
+
 grant execute on function public.check_code(text) to anon;
 grant execute on function public.check_admin(text) to anon;
 grant execute on function public.set_opstelling(text, int, jsonb) to anon;
