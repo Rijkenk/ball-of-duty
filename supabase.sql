@@ -20,7 +20,8 @@ create table if not exists public.opstelling (
 
 create table if not exists public.team_secret (
   id int primary key default 1 check (id = 1),
-  code text not null
+  code text not null,
+  admin_code text not null default ''
 );
 
 alter table public.opgaves enable row level security;
@@ -50,15 +51,21 @@ begin
 end $$;
 
 
+create or replace function public.check_admin(p_code text) returns boolean
+language sql security definer set search_path = public as $$
+  select exists (select 1 from team_secret where admin_code <> '' and admin_code = p_code);
+$$;
+
 create or replace function public.set_opstelling(p_code text, p_match int, p_slots jsonb)
 returns void language plpgsql security definer set search_path = public as $$
 begin
-  if not check_code(p_code) then raise exception 'bad_code'; end if;
+  if not check_admin(p_code) then raise exception 'bad_code'; end if;
   insert into opstelling (match, slots, updated_at) values (p_match, coalesce(p_slots, '{}'), now())
   on conflict (match) do update set slots = excluded.slots, updated_at = now();
 end $$;
 
 grant execute on function public.check_code(text) to anon;
+grant execute on function public.check_admin(text) to anon;
 grant execute on function public.set_opstelling(text, int, jsonb) to anon;
 grant execute on function public.set_opgave(text, int, text, text, text[]) to anon;
 
@@ -71,6 +78,6 @@ do $$ begin
   alter publication supabase_realtime add table public.opstelling;
 exception when duplicate_object then null; end $$;
 
--- KIES HIER JULLIE TEAMCODE
-insert into public.team_secret (id, code) values (1, 'VERANDER-MIJ')
-on conflict (id) do update set code = excluded.code;
+-- KIES HIER DE TEAMCODE (voor iedereen) EN DE BEHEERCODE (alleen captain en Kenneth, voor de opstelling)
+insert into public.team_secret (id, code, admin_code) values (1, 'VERANDER-MIJ', 'VERANDER-OOK-MIJ')
+on conflict (id) do update set code = excluded.code, admin_code = excluded.admin_code;

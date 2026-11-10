@@ -210,8 +210,10 @@ footer a{color:inherit}
   </section>
 
   <section class="card">
-    <div><h2>Wedstrijdformulier</h2><p class="hint">Kies per partij wie er speelt. ★ = wil dit graag of heeft geen voorkeur. Iedereen speelt maximaal 2 enkelpartijen; koppel telt niet mee.</p></div>
+    <div><h2>Wedstrijdformulier</h2><p class="hint">Kies per partij wie er speelt. ★ = wil dit graag of heeft geen voorkeur. Iedereen speelt maximaal 2 enkelpartijen; koppel telt niet mee. De captain en Kenneth maken de opstelling.</p></div>
     <div class="need"><ul id="need"></ul></div>
+    <p class="hint" id="lineupwho"></p>
+    <form class="coderow" id="admincard" hidden><input id="adminin" type="password" autocomplete="off" placeholder="beheercode" aria-label="Beheercode"><button type="submit" class="btn">Ontgrendel</button></form>
     <p class="warn" id="lineupwarn" hidden></p>
     <div class="saved" id="lineupsaved"></div>
   </section>
@@ -266,6 +268,7 @@ const GAMES=[
  {k:"k9b",n:"Koppel 9-ball",lab:"K9",spots:2,sub:"koppel, 2 spelers",c:"var(--gk9)"}];
 const MAXP=2;
 const SLOTS=[["8b-1","8b"],["8b-2","8b"],["10b","10b"],["141","141"],["9b","9b"],["k9b-1","k9b"],["k9b-2","k9b"]];
+const ADMINS=["1162921","62677414"]; // Kenneth en captain Laura
 let lineups={}; // matchNo -> {slots:{slotKey:playerId}}
 const CS="https://cuescore.com/tournament/Pool+Overijssel+Tweede+Klasse+2026%252F2027/83574433";
 const solo=prefs=>prefs.filter(k=>k!=="k9b").length;
@@ -391,7 +394,8 @@ function renderTeam(){
 }
 
 function scoreTxt(m){return Number.isFinite(m.sa)&&Number.isFinite(m.sb)&&m.status==="finished"?`${m.sa}–${m.sb}`:""}
-function lineupWritable(){return !!db&&!!teamCode}
+let adminCode=store.get("bod-admin")||"";
+function lineupWritable(){return !!db&&ADMINS.includes(me)&&!!adminCode}
 function assigned(no,pid){const sl=lineups[no]?.slots||{};return SLOTS.filter(([k])=>sl[k]===pid).map(([,g])=>g)}
 function renderLineup(){
   const m=selected, sl=lineups[m.no]?.slots||{};
@@ -408,6 +412,9 @@ function renderLineup(){
       return `<select id="ls-${k}" data-slot="${k}" aria-label="${g.n} speler" ${canEdit?"":"disabled"}><option value="">— kies speler —</option>${curMissing?`<option value="${cur}" selected>${esc(PLAYERS.find(p=>p.id===cur)?.name||"?")} (afgemeld)</option>`:""}${opts.map(({p,e})=>`<option value="${p.id}" ${p.id===cur?"selected":""}>${want.some(w=>w.p.id===p.id)?"★ ":""}${esc(p.name)}${e.status==="misschien"?" (?)":""}</option>`).join("")}</select>`}).join("");
     return `<li><span class="gb" style="--c:${g.c}">${g.lab}</span><span class="nm"><b>${g.n}</b>Willen: ${esc(names)}</span><div class="slots">${sels}</div></li>`}).join("");
   if(focusId&&$(focusId))$(focusId).focus();
+  const isAdmin=ADMINS.includes(me);
+  $("admincard").hidden=!(isAdmin&&db&&!adminCode);
+  $("lineupwho").textContent=!isAdmin?"Alleen de captain en Kenneth stellen de opstelling samen.":!adminCode?"Vul de beheercode in om de opstelling te maken.":"Jij kunt de opstelling aanpassen.";
   // controles
   const warns=[];
   for(const p of PLAYERS){const a=assigned(m.no,p.id);const solo=a.filter(k=>k!=="k9b").length;
@@ -475,14 +482,19 @@ $("games").addEventListener("click",ev=>{const b=ev.target.closest("button[data-
   if(prefs.includes(k))prefs=prefs.filter(x=>x!==k);else if(k==="any")prefs=["any"];else prefs=[...prefs.filter(x=>x!=="any"),k];
   const patch={prefs};if(!e.status)patch.status="ja";save(patch)});
 
+let adminWrite=false;
+$("admincard").addEventListener("submit",async ev=>{ev.preventDefault();const c=$("adminin").value.trim();if(!c||!SB)return;
+  try{const {data,error}=await SB.rpc("check_admin",{p_code:c});if(error)throw error;
+    if(data===true){adminCode=c;store.set("bod-admin",c);renderTeam()}else{$("lineupwho").textContent="Deze beheercode klopt niet."}}
+  catch(e){$("lineupwho").textContent="Controleren lukt nu niet."}});
 $("need").addEventListener("change",ev=>{
   const sel=ev.target.closest("select[data-slot]");if(!sel||!lineupWritable())return;
   const no=selected.no;const slots={...(lineups[no]?.slots||{})};
   if(sel.value)slots[sel.dataset.slot]=sel.value;else delete slots[sel.dataset.slot];
   lineups[no]={slots};renderTeam();
   const el=$("lineupsaved");el.dataset.busy="1";el.textContent="Opstelling opslaan…";
-  db.collection("opstelling").doc(String(no)).set({match:no,slots,updatedAt:new Date().toISOString()})
-    .then(()=>{delete el.dataset.busy;el.textContent="Opstelling opgeslagen"},err=>{delete el.dataset.busy;el.textContent="Opstelling niet opgeslagen: "+(err?.code==="bad_code"?"de teamcode klopt niet.":"probeer het opnieuw.");if(err?.code==="bad_code"&&typeof forgetCode==="function")forgetCode()});
+  adminWrite=true;db.collection("opstelling").doc(String(no)).set({match:no,slots,updatedAt:new Date().toISOString()})
+    .then(()=>{delete el.dataset.busy;el.textContent="Opstelling opgeslagen"},err=>{delete el.dataset.busy;el.textContent="Opstelling niet opgeslagen: "+(err?.code==="bad_code"?"de teamcode klopt niet.":"probeer het opnieuw.");if(err?.code==="bad_code"){adminCode="";store.set("bod-admin","");renderTeam()}});
 });
 
 function showTab(name){
@@ -541,7 +553,7 @@ function makeDb(){
   const fail=error=>{const e=new Error(error.message||"fout");e.code=/bad_code/.test(error.message||"")?"bad_code":"error";throw e};
   async function write(name,id,d){
     if(name==="opgaves"){const {error}=await SB.rpc("set_opgave",{p_code:teamCode,p_match:d.match,p_player:d.player,p_status:d.status||"",p_prefs:d.prefs||[]});if(error)fail(error)}
-    else if(name==="opstelling"){const {error}=await SB.rpc("set_opstelling",{p_code:teamCode,p_match:d.match,p_slots:d.slots||{}});if(error)fail(error)}
+    else if(name==="opstelling"){const {error}=await SB.rpc("set_opstelling",{p_code:adminCode,p_match:d.match,p_slots:d.slots||{}});if(error)fail(error)}
     else{const {error}=await SB.rpc("set_uitslag",{p_code:teamCode,p_match:+id,p_ons:d?d.ons:null,p_tegen:d?d.tegen:null});if(error)fail(error)}
   }
   function toDoc(name,r){
