@@ -24,3 +24,12 @@ Installeerbare webapp voor de spelers van Ball of Duty: volgende wedstrijd, aanw
 ## CueScore-gegevens
 De app probeert eerst rechtstreeks de CueScore-API (`api.cuescore.com/tournament/?id=83574433`). Lukt dat niet, dan leest hij `data/cuescore.json`, dat de GitHub Action elk uur bijwerkt. Draai de Action na het online zetten één keer met de hand (tabblad **Actions** > *CueScore bijwerken* > *Run workflow*).
 In `index.html` staat het schema van 10 november als reserve voor als beide niet lukken.
+
+## Melding bij te weinig spelers
+Een wedstrijd gaat alleen door met minimaal 3 aanmeldingen. Elk uur controleert de GitHub Action of er een wedstrijd binnen 72 uur begint. Zijn er dan minder dan 3 spelers aangemeld ("Ik ben erbij"), dan krijgt de captain één WhatsApp-bericht via CallMeBot.
+
+Instellen (één keer):
+1. De captain volgt de stappen op callmebot.com (WhatsApp API) en krijgt daarna een API-key per WhatsApp.
+2. In de repo: **Settings > Secrets and variables > Actions > New repository secret**:
+   - `CAPTAIN_PHONE`: telefoonnummer van de captain, internationaal (bijv. +316...)
+   - `CALLMEBOT_APIKEY`: de key van CallMeBot

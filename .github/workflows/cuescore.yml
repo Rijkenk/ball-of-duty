@@ -1,4 +1,4 @@
-name: CueScore bijwerken
+name: CueScore bijwerken en opkomst controleren
 
 on:
   schedule:
@@ -34,3 +34,17 @@ jobs:
           git add data/cuescore.json
           git commit -m "CueScore-gegevens bijgewerkt"
           git push
+      - name: Opkomst controleren (72 uur voor de wedstrijd)
+        env:
+          CAPTAIN_PHONE: ${{ secrets.CAPTAIN_PHONE }}
+          CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
+        run: |
+          git pull --quiet origin main || true
+          node scripts/check-opkomst.mjs
+          if [ -n "$(git status --porcelain data/meldingen.json)" ]; then
+            git config user.name "cuescore-bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add data/meldingen.json
+            git commit -m "Opkomst gecontroleerd"
+            git push
+          fi

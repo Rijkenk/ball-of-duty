@@ -56,6 +56,7 @@ select{background:var(--surface);border:1px solid var(--line);border-radius:8px;
 .vs div:last-child{text-align:right}
 .meta{display:flex;flex-wrap:wrap;gap:8px;font-size:13px}
 .tag{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:3px 10px}
+.quorum{border-radius:10px;padding:9px 12px;font-size:13px;position:relative;z-index:1}.quorum.short{background:var(--no-soft);color:var(--fg);border:1px solid var(--no)}.quorum.short b{color:var(--no)}.quorum.ok{background:var(--yes-soft);color:var(--yes);font-weight:600}
 .count{font-size:13px;opacity:.9}
 
 /* Kaarten */
@@ -276,6 +277,8 @@ const GAMES=[
  {k:"9b",n:"9-ball",lab:"9",spots:1,sub:"1 partij",c:"var(--g9)"},
  {k:"k9b",n:"Koppel 9-ball",lab:"K9",spots:2,sub:"koppel, 2 spelers",c:"var(--gk9)"}];
 const MAXP=2;
+const MIN_SPELERS=3;
+const fmtDeadline=new Intl.DateTimeFormat("nl-NL",{weekday:"long",day:"numeric",month:"long",hour:"2-digit",minute:"2-digit"});
 const SLOTS=[["8b-1","8b"],["8b-2","8b"],["10b","10b"],["141","141"],["9b","9b"],["k9b-1","k9b"],["k9b-2","k9b"]];
 const ADMINS=["1162921","62677414"]; // Kenneth en captain Laura
 let lineups={}; // matchNo -> {slots:{slotKey:playerId}}
@@ -365,7 +368,8 @@ function renderBoard(){
     <div class="when">${cap(fmtDay.format(m.date))}<small>20:00 · ${relDay(m.date)}</small></div>
     <div class="vs">${home}<div class="mid">tegen</div>${away}</div>
     <div class="meta"><span class="tag">${m.thuis?"Thuis":"Uit"}</span><span class="tag">${esc(m.venue)}</span><a class="tag taglink" href="${m.url||CS}" target="_blank" rel="noopener">Wedstrijd ${m.no} op CueScore ↗</a></div>
-    <div class="count">${dbReady?`${yes} van ${PLAYERS.length} spelers hebben zich aangemeld`:"Opgaves laden…"}</div>`;
+    <div class="count">${dbReady?`${yes} van ${PLAYERS.length} spelers hebben zich aangemeld`:"Opgaves laden…"}</div>
+    ${dbReady&&m.date>now?(yes<MIN_SPELERS?`<div class="quorum short"><b>Nog ${MIN_SPELERS-yes} ${MIN_SPELERS-yes===1?"speler":"spelers"} nodig.</b> Met minder dan ${MIN_SPELERS} spelers gaat de wedstrijd niet door.${m.date-now>72*3600e3?` Is het ${fmtDeadline.format(new Date(m.date-72*3600e3))} nog niet genoeg, dan krijgt de captain een melding.`:""}</div>`:`<div class="quorum ok">Genoeg spelers, de wedstrijd gaat door.</div>`):""}`;
 }
 function cap(s){return s.charAt(0).toUpperCase()+s.slice(1)}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
