@@ -9,16 +9,15 @@
 <script>
 // Ball of Duty is verhuisd. Naam en code gaan mee, zodat niemand opnieuw hoeft in te loggen.
 (function(){
-  var NEW="https://rijkenk.github.io/poolteam-app/ballofduty/";
+  var NEW="https://ballofduty.poolteam.nl/", d={};
   try{
-    var me=localStorage.getItem("bod-me"),auth=localStorage.getItem("bod-auth");
-    if(me&&!localStorage.getItem("ballofduty-me"))localStorage.setItem("ballofduty-me",me);
-    if(auth&&!localStorage.getItem("ballofduty-auth"))localStorage.setItem("ballofduty-auth",auth);
+    var me=localStorage.getItem("ballofduty-me")||localStorage.getItem("bod-me"),au=localStorage.getItem("ballofduty-auth")||localStorage.getItem("bod-auth");
+    if(me)d.me=me;if(au)d.auth=au;
   }catch(e){}
   try{navigator.serviceWorker&&navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){if(r.scope.indexOf("/ball-of-duty/")>-1)r.unregister()})})}catch(e){}
-  location.replace(NEW+location.hash);
+  location.replace(NEW+(Object.keys(d).length?"#mee="+encodeURIComponent(JSON.stringify(d)):""));
 })();
 </script>
 </head>
-<body><p>Ball of Duty is verhuisd naar<br><a href="https://rijkenk.github.io/poolteam-app/ballofduty/">rijkenk.github.io/poolteam-app/ballofduty</a></p></body>
+<body><p>Ball of Duty is verhuisd naar<br><a href="https://ballofduty.poolteam.nl/">ballofduty.poolteam.nl</a></p></body>
 </html>
